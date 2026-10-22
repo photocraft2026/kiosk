@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Check-in">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#14171c">
+<title>Customer Check-in</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#14171c;--panel:#1d2229;--line:#2e3641;--text:#eef1f4;--muted:#9aa4b2;--accent:#f28c28;--accent-ink:#1a1006;--bad:#ff7b7b;--z:1.8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:17px/1.4 -apple-system,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;-webkit-user-select:none;user-select:none;-webkit-text-size-adjust:100%}
+input,select{-webkit-user-select:text;user-select:text}
+header{display:flex;align-items:center;justify-content:space-between;padding:max(16px,env(safe-area-inset-top)) 28px 16px;border-bottom:1px solid var(--line)}
+.brand{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.icon-btn{width:48px;height:48px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--muted);display:grid;place-items:center}
+.icon-btn:active{background:var(--line)}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+main{max-width:1180px;margin:0 auto;padding:32px 28px calc(32px + env(safe-area-inset-bottom));display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:40px;align-items:start}
+h2{margin:0 0 6px;font-size:36px;line-height:1.1;letter-spacing:-.02em}
+.sub{margin:0 0 28px;color:var(--muted);max-width:34em}
+.field{margin-bottom:20px}
+label{display:block;margin-bottom:8px;font-weight:600;font-size:16px}
+input,select{width:100%;padding:18px 18px;font:inherit;font-size:20px;color:var(--text);background:var(--panel);border:2px solid var(--line);border-radius:16px;outline:none;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(242,140,40,.18)}
+input[aria-invalid=true]{border-color:var(--bad)}
+.err{display:none;margin-top:6px;color:var(--bad);font-size:15px}
+input[aria-invalid=true]+.err{display:block}
+.actions{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-top:28px}
+button{font:inherit;font-weight:700;border-radius:16px;padding:20px;border:2px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer}
+button:active{transform:scale(.98)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:21px}
+.tag-col{position:sticky;top:24px}
+.tag-col h3{margin:0 0 4px;font-size:18px}
+.tag-col p{margin:0 0 18px;color:var(--muted);font-size:15px}
+.paper{background:#0d0f12;border:1px solid var(--line);border-radius:20px;padding:26px;display:grid;place-items:center}
+.zoom{zoom:var(--z)}
+#label{width:2.25in;height:1.25in;padding:.08in;background:#fff;color:#000;border-radius:.04in;display:flex;gap:.05in;align-items:center;overflow:hidden;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
+#label .info{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:space-between}
+#label .shop{font-size:7pt;font-weight:800;border-bottom:1px solid #000;padding-bottom:2px}
+#label .nm{font-size:11pt;font-weight:800;line-height:1.1;text-transform:uppercase;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#label .ph{font-size:8.5pt;font-weight:700}
+#label .em{font-size:6.5pt;overflow-wrap:anywhere}
+#label .meta{font-size:5.5pt;color:#333}
+#label .qrbox{width:1.05in;height:1.05in;flex:none;padding:.05in;background:#fff}
+#qr,#qr img,#qr canvas{width:100%;height:100%;display:block}
+#qr img{image-rendering:pixelated;image-rendering:crisp-edges}
+#qr canvas{display:none!important}
+.overlay{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(10,12,15,.94)}
+.overlay.show{display:flex}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:32px;width:100%;max-width:560px}
+.done{text-align:center}
+.done .tick{width:88px;height:88px;margin:0 auto 20px;border-radius:50%;background:rgba(242,140,40,.16);color:var(--accent);display:grid;place-items:center}
+.done .tick svg{width:44px;height:44px;stroke-width:2.5}
+.done h2{font-size:32px}
+.note{margin:14px 0 0;color:var(--bad);font-size:15px}
+.card h3{margin:0 0 4px;font-size:24px}
+.card .hint{color:var(--muted);font-size:14px;margin:6px 0 0}
+.card .row{margin-top:18px}
+.card input,.card select{font-size:17px;padding:14px}
+.card .foot{display:flex;gap:12px;margin-top:24px}
+.card .foot button{flex:1;padding:16px}
+.stat{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line);margin-top:22px}
+.stat button{padding:12px 16px;font-size:15px}
+.danger{color:var(--bad)}
+.hide{display:none!important}
+@media (max-width:900px){:root{--z:2.3}main{grid-template-columns:1fr;gap:28px}.tag-col{position:static}h2{font-size:32px}}
+@media print{
+  @page{size:2.25in 1.25in;margin:0}
+  html,body{background:#fff!important;min-height:0;height:auto}
+  body *{visibility:hidden}
+  #label,#label *{visibility:visible}
+  .zoom{zoom:1}
+  #label{position:fixed;left:0;top:0;border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" id="brand">PhotoCraft</div>
+  <button class="icon-btn" id="gear" aria-label="Staff settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+
+<main>
+  <section>
+    <h2>Check in</h2>
+    <p class="sub">Enter your details and we’ll print a tag with a QR code. Scan it with your phone camera to save us to your contacts.</p>
+    <form id="form" novalidate autocomplete="on">
+      <div class="field">
+        <label for="name">Full name</label>
+        <input id="name" name="name" type="text" autocomplete="name" autocapitalize="words" enterkeyhint="next" maxlength="60" placeholder="Marcus Vance" aria-invalid="false">
+        <div class="err">Enter your first and last name.</div>
+      </div>
+      <div class="field">
+        <label for="phone">Phone number</label>
+        <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="next" maxlength="24" placeholder="(555) 000-8899" aria-invalid="false">
+        <div class="err">Enter a phone number with at least 7 digits.</div>
+      </div>
+      <div class="field">
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" enterkeyhint="done" maxlength="80" placeholder="marcus@example.com" aria-invalid="false">
+        <div class="err">Enter an email like name@example.com.</div>
+      </div>
+      <div class="actions">
+        <button type="button" id="clear">Clear</button>
+        <button type="submit" class="primary">Print my tag</button>
+      </div>
+    </form>
+  </section>
+
+  <aside class="tag-col">
+    <h3>Your tag</h3>
+    <p>This is what will print.</p>
+    <div class="paper"><div class="zoom">
+      <div id="label">
+        <div class="info">
+          <div class="shop" id="l-shop">PhotoCraft</div>
+          <div class="nm" id="l-name">Your name</div>
+          <div>
+            <div class="ph" id="l-phone">(555) 000-8899</div>
+            <div class="em" id="l-email">you@example.com</div>
+          </div>
+          <div class="meta"><span id="l-time"></span> · Scan to save contact</div>
+        </div>
+        <div class="qrbox"><div id="qr"></div></div>
+      </div>
+    </div></div>
+  </aside>
+</main>
+
+<!-- Success -->
+<div class="overlay" id="done">
+  <div class="card done">
+    <div class="tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2>Your tag is printing</h2>
+    <p class="sub" style="margin:0 auto 22px">Take it from the printer. This screen clears in <b id="count">15</b> seconds.</p>
+    <button class="primary" id="next" style="width:100%">Next customer</button>
+    <p class="note hide" id="print-note"></p>
+  </div>
+</div>
+
+<!-- Staff settings -->
+<div class="overlay" id="admin">
+  <div class="card" style="max-height:92vh;overflow:auto">
+    <div id="gate">
+      <h3>Staff only</h3>
+      <p class="hint">Enter the staff PIN to open settings.</p>
+      <div class="row"><input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN" autocomplete="off"></div>
+      <p class="note hide" id="pin-err">Wrong PIN.</p>
+      <div class="foot"><button type="button" data-close>Cancel</button><button type="button" class="primary" id="pin-go">Unlock</button></div>
+    </div>
+    <div id="panel" class="hide">
+      <h3>Staff settings</h3>
+      <div class="row"><label for="s-shop">Shop name on the tag</label><input id="s-shop" maxlength="30"></div>
+      <div class="row"><label for="s-method">Printing</label>
+        <select id="s-method">
+          <option value="browser">AirPrint / browser print dialog</option>
+          <option value="webhook">Send to my print server (webhook)</option>
+        </select></div>
+      <div class="row hide" id="wh-row"><label for="s-webhook">Print server URL</label><input id="s-webhook" type="url" placeholder="https://printer.example.com/print">
+        <p class="hint">Must start with https:// because this page is served over HTTPS. The server also needs to allow requests from this site (CORS). It receives name, phone, email, the vCard text and a PNG of the QR code.</p></div>
+      <div class="row"><label for="s-reset">Clear screen after printing (seconds)</label><input id="s-reset" type="number" inputmode="numeric" min="5" max="60"></div>
+      <div class="row"><label for="s-pin">Staff PIN</label><input id="s-pin" type="password" inputmode="numeric" maxlength="8"></div>
+      <div class="stat"><span><b id="log-count">0</b> check-ins saved on this iPad</span><span style="display:flex;gap:8px"><button type="button" id="csv">Export CSV</button><button type="button" class="danger" id="wipe">Delete</button></span></div>
+      <div class="foot"><button type="button" id="test">Test print</button><button type="button" data-close>Cancel</button><button type="button" class="primary" id="save">Save</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var DEF = { shop:'PhotoCraft', method:'browser', webhook:'', reset:15, pin:'1234' };
+  var S = Object.assign({}, DEF);
+  try { Object.assign(S, JSON.parse(localStorage.getItem('kiosk_settings')||'{}')); } catch(e){}
+  var qr = null, tick = null, idle = null;
+
+  /* ---------- QR + label ---------- */
+  function esc(v){ return v.replace(/[\\;,]/g,'\\$&').replace(/\r?\n/g,' '); }
+  function vcard(n,p,e){
+    return ['BEGIN:VCARD','VERSION:3.0','FN:'+esc(n),'TEL;TYPE=CELL:'+p,'EMAIL:'+e,'END:VCARD'].join('\n');
+  }
+  function utf8(s){ return unescape(encodeURIComponent(s)); } // qrcodejs reads one byte per char
+  function vals(){ return { n:$('name').value.trim(), p:$('phone').value.trim(), e:$('email').value.trim() }; }
+  function stamp(){ var d=new Date(); return d.toLocaleDateString([], {day:'numeric',month:'short',year:'numeric'})+' '+d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }
+  function render(){
+    var v = vals();
+    var n = v.n || 'Your name', p = v.p || '(555) 000-8899', e = v.e || 'you@example.com';
+    $('l-shop').textContent = S.shop; $('brand').textContent = S.shop;
+    $('l-name').textContent = n; $('l-phone').textContent = p; $('l-email').textContent = e;
+    $('l-time').textContent = stamp();
+    try {
+      if(!qr) qr = new QRCode($('qr'), { width:296, height:296, colorDark:'#000000', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
+      qr.clear(); qr.makeCode(utf8(vcard(n,p,e)));
+    } catch(err){ console.error('QR failed', err); }
+  }
+
+  /* ---------- validation ---------- */
+  function check(id, ok){ $(id).setAttribute('aria-invalid', ok ? 'false' : 'true'); return ok; }
+  function validate(){
+    var v = vals();
+    var a = check('name', v.n.length >= 2);
+    var b = check('phone', v.p.replace(/\D/g,'').length >= 7);
+    var c = check('email', /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.e));
+    return a && b && c;
+  }
+  function bumpIdle(){
+    clearTimeout(idle);
+    var v = vals();
+    if(v.n || v.p || v.e) idle = setTimeout(clearForm, 60000); // protects privacy if someone walks away
+  }
+  function clearForm(){
+    $('form').reset();
+    ['name','phone','email'].forEach(function(i){ $(i).setAttribute('aria-invalid','false'); });
+    render();
+  }
+
+  /* ---------- printing ---------- */
+  function qrPng(){ var c = $('qr').querySelector('canvas'); try { return c ? c.toDataURL('image/png') : ''; } catch(e){ return ''; } }
+  function printNow(){ setTimeout(function(){ window.print(); }, 250); }
+  function printLabel(v){
+    if(S.method === 'webhook' && S.webhook){
+      return fetch(S.webhook, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name:v.n, phone:v.p, email:v.e, vcard:vcard(v.n,v.p,v.e), qrPng:qrPng(), timestamp:new Date().toISOString() })
+      }).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); })
+        .catch(function(){ note('Couldn’t reach the print server, so the print dialog opened instead.'); printNow(); });
+    }
+    printNow();
+    return Promise.resolve();
+  }
+  function note(t){ var el=$('print-note'); el.textContent=t; el.classList.toggle('hide', !t); }
+
+  /* ---------- log ---------- */
+  function logs(){ try { return JSON.parse(localStorage.getItem('kiosk_logs')||'[]'); } catch(e){ return []; } }
+  function addLog(v){ var l=logs(); l.unshift({name:v.n,phone:v.p,email:v.e,time:new Date().toISOString()}); try{ localStorage.setItem('kiosk_logs', JSON.stringify(l)); }catch(e){} }
+  function cell(s){ s=String(s); if(/^[=+\-@\t\r]/.test(s)) s="'"+s; return '"'+s.replace(/"/g,'""')+'"'; }
+  function exportCsv(){
+    var l = logs(); if(!l.length){ alert('No check-ins saved yet.'); return; }
+    var rows = ['Name,Phone,Email,Time'].concat(l.map(function(r){ return [r.name,r.phone,r.email,r.time].map(cell).join(','); }));
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([rows.join('\n')], {type:'text/csv'}));
+    a.download = 'check-ins-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  /* ---------- success screen ---------- */
+  function showDone(){
+    var left = S.reset; $('count').textContent = left; $('done').classList.add('show');
+    clearInterval(tick);
+    tick = setInterval(function(){ left--; $('count').textContent = Math.max(left,0); if(left<=0) closeDone(); }, 1000);
+  }
+  function closeDone(){ clearInterval(tick); $('done').classList.remove('show'); note(''); clearForm(); }
+
+  /* ---------- staff settings ---------- */
+  function openAdmin(){ $('pin').value=''; $('pin-err').classList.add('hide'); $('gate').classList.remove('hide'); $('panel').classList.add('hide'); $('admin').classList.add('show'); setTimeout(function(){ $('pin').focus(); }, 50); }
+  function closeAdmin(){ $('admin').classList.remove('show'); }
+  function whRow(){ $('wh-row').classList.toggle('hide', $('s-method').value !== 'webhook'); }
+  function unlock(){
+    if($('pin').value !== S.pin){ $('pin-err').classList.remove('hide'); return; }
+    $('s-shop').value=S.shop; $('s-method').value=S.method; $('s-webhook').value=S.webhook; $('s-reset').value=S.reset; $('s-pin').value=S.pin;
+    $('log-count').textContent = logs().length; whRow();
+    $('gate').classList.add('hide'); $('panel').classList.remove('hide');
+  }
+  function save(){
+    S.shop = $('s-shop').value.trim() || DEF.shop;
+    S.method = $('s-method').value;
+    S.webhook = $('s-webhook').value.trim();
+    S.reset = Math.min(60, Math.max(5, parseInt($('s-reset').value,10) || DEF.reset));
+    S.pin = $('s-pin').value.trim() || DEF.pin;
+    try { localStorage.setItem('kiosk_settings', JSON.stringify(S)); } catch(e){}
+    render(); closeAdmin();
+  }
+
+  /* ---------- wiring ---------- */
+  ['name','phone','email'].forEach(function(i){ $(i).addEventListener('input', function(){ render(); bumpIdle(); }); });
+  $('form').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    if(!validate()) return;
+    document.activeElement && document.activeElement.blur();
+    var v = vals(); render(); addLog(v); showDone(); printLabel(v);
+  });
+  $('clear').addEventListener('click', clearForm);
+  $('next').addEventListener('click', closeDone);
+  $('gear').addEventListener('click', openAdmin);
+  $('pin-go').addEventListener('click', unlock);
+  $('pin').addEventListener('keydown', function(e){ if(e.key==='Enter') unlock(); });
+  $('s-method').addEventListener('change', whRow);
+  $('save').addEventListener('click', save);
+  $('csv').addEventListener('click', exportCsv);
+  $('test').addEventListener('click', function(){ render(); printNow(); });
+  $('wipe').addEventListener('click', function(){ if(confirm('Delete all saved check-ins from this iPad?')){ localStorage.removeItem('kiosk_logs'); $('log-count').textContent='0'; } });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function(b){ b.addEventListener('click', closeAdmin); });
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
